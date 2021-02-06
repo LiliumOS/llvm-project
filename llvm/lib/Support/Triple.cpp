@@ -223,6 +223,7 @@ StringRef Triple::getOSTypeName(OSType Kind) {
   case WatchOS: return "watchos";
   case Win32: return "windows";
   case ZOS: return "zos";
+  case Phantom: return "phantom";
   }
 
   llvm_unreachable("Invalid OSType");
@@ -252,6 +253,8 @@ StringRef Triple::getEnvironmentTypeName(EnvironmentType Kind) {
   case MuslEABIHF: return "musleabihf";
   case MuslX32: return "muslx32";
   case Simulator: return "simulator";
+  case PhantomUser: return "user";
+  case PhantomKernel: return "kernel";
   }
 
   llvm_unreachable("Invalid EnvironmentType!");
@@ -538,6 +541,7 @@ static Triple::OSType parseOS(StringRef OSName) {
     .StartsWith("hurd", Triple::Hurd)
     .StartsWith("wasi", Triple::WASI)
     .StartsWith("emscripten", Triple::Emscripten)
+    .StartsWith("phantom",Triple::Phantom)
     .Default(Triple::UnknownOS);
 }
 
@@ -564,6 +568,8 @@ static Triple::EnvironmentType parseEnvironment(StringRef EnvironmentName) {
       .StartsWith("coreclr", Triple::CoreCLR)
       .StartsWith("simulator", Triple::Simulator)
       .StartsWith("macabi", Triple::MacABI)
+      .StartsWith("user",Triple::PhantomUser)
+      .StartsWith("kernel",Triple::PhantomKernel)
       .Default(Triple::UnknownEnvironment);
 }
 
