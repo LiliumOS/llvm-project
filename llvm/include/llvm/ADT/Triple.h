@@ -199,7 +199,8 @@ public:
     Hurd,       // GNU/Hurd
     WASI,       // Experimental WebAssembly OS
     Emscripten,
-    LastOSType = Emscripten
+    Phantom,
+    LastOSType = Phantom
   };
   enum EnvironmentType {
     UnknownEnvironment,
@@ -226,7 +227,9 @@ public:
     CoreCLR,
     Simulator, // Simulator variants of other systems, e.g., Apple's iOS
     MacABI, // Mac Catalyst variant of Apple's iOS deployment target.
-    LastEnvironmentType = MacABI
+    PhantomUser,
+    PhantomKernel
+    LastEnvironmentType = PhantomKernel
   };
   enum ObjectFormatType {
     UnknownObjectFormat,
