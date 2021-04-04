@@ -9209,7 +9209,7 @@ static SDValue LowerBUILD_VECTORvXi1(SDValue Op, SelectionDAG &DAG,
   return DstVec;
 }
 
-static bool isHorizOp(unsigned Opcode) {
+LLVM_ATTRIBUTE_UNUSED static bool isHorizOp(unsigned Opcode) {
   switch (Opcode) {
   case X86ISD::PACKSS:
   case X86ISD::PACKUS:
@@ -45984,18 +45984,8 @@ static bool isHorizontalBinOp(unsigned HOpcode, SDValue &LHS, SDValue &RHS,
          "Unsupported vector type for horizontal add/sub");
   unsigned NumElts = VT.getVectorNumElements();
 
-  // TODO - can we make a general helper method that does all of this for us?
   auto GetShuffle = [&](SDValue Op, SDValue &N0, SDValue &N1,
                         SmallVectorImpl<int> &ShuffleMask) {
-    if (Op.getOpcode() == ISD::VECTOR_SHUFFLE) {
-      if (!Op.getOperand(0).isUndef())
-        N0 = Op.getOperand(0);
-      if (!Op.getOperand(1).isUndef())
-        N1 = Op.getOperand(1);
-      ArrayRef<int> Mask = cast<ShuffleVectorSDNode>(Op)->getMask();
-      ShuffleMask.append(Mask.begin(), Mask.end());
-      return;
-    }
     bool UseSubVector = false;
     if (Op.getOpcode() == ISD::EXTRACT_SUBVECTOR &&
         Op.getOperand(0).getValueType().is256BitVector() &&
@@ -46004,23 +45994,24 @@ static bool isHorizontalBinOp(unsigned HOpcode, SDValue &LHS, SDValue &RHS,
       UseSubVector = true;
     }
     SmallVector<SDValue, 2> SrcOps;
-    SmallVector<int, 16> SrcShuffleMask;
+    SmallVector<int, 16> SrcMask, ScaledMask;
     SDValue BC = peekThroughBitcasts(Op);
-    if (isTargetShuffle(BC.getOpcode()) &&
-        getTargetShuffleMask(BC.getNode(), BC.getSimpleValueType(), false,
-                             SrcOps, SrcShuffleMask)) {
-      if (!UseSubVector && SrcShuffleMask.size() == NumElts &&
-          SrcOps.size() <= 2) {
+    if (getTargetShuffleInputs(BC, SrcOps, SrcMask, DAG) &&
+        !isAnyZero(SrcMask) && all_of(SrcOps, [BC](SDValue Op) {
+          return Op.getValueSizeInBits() == BC.getValueSizeInBits();
+        })) {
+      resolveTargetShuffleInputsAndMask(SrcOps, SrcMask);
+      if (!UseSubVector && SrcOps.size() <= 2 &&
+          scaleShuffleElements(SrcMask, NumElts, ScaledMask)) {
         N0 = SrcOps.size() > 0 ? SrcOps[0] : SDValue();
         N1 = SrcOps.size() > 1 ? SrcOps[1] : SDValue();
-        ShuffleMask.append(SrcShuffleMask.begin(), SrcShuffleMask.end());
+        ShuffleMask.assign(ScaledMask.begin(), ScaledMask.end());
       }
-      if (UseSubVector && (SrcShuffleMask.size() == (NumElts * 2)) &&
-          SrcOps.size() == 1) {
-        N0 = extract128BitVector(SrcOps[0], 0, DAG, SDLoc(Op));
-        N1 = extract128BitVector(SrcOps[0], NumElts, DAG, SDLoc(Op));
-        ArrayRef<int> Mask = ArrayRef<int>(SrcShuffleMask).slice(0, NumElts);
-        ShuffleMask.append(Mask.begin(), Mask.end());
+      if (UseSubVector && SrcOps.size() == 1 &&
+          scaleShuffleElements(SrcMask, 2 * NumElts, ScaledMask)) {
+        std::tie(N0, N1) = DAG.SplitVector(SrcOps[0], SDLoc(Op));
+        ArrayRef<int> Mask = ArrayRef<int>(ScaledMask).slice(0, NumElts);
+        ShuffleMask.assign(Mask.begin(), Mask.end());
       }
     }
   };
@@ -46967,9 +46958,10 @@ static SDValue foldXor1SetCC(SDNode *N, SelectionDAG &DAG) {
 static SDValue combineXor(SDNode *N, SelectionDAG &DAG,
                           TargetLowering::DAGCombinerInfo &DCI,
                           const X86Subtarget &Subtarget) {
+  EVT VT = N->getValueType(0);
+
   // If this is SSE1 only convert to FXOR to avoid scalarization.
-  if (Subtarget.hasSSE1() && !Subtarget.hasSSE2() &&
-      N->getValueType(0) == MVT::v4i32) {
+  if (Subtarget.hasSSE1() && !Subtarget.hasSSE2() && VT == MVT::v4i32) {
     return DAG.getBitcast(
         MVT::v4i32, DAG.getNode(X86ISD::FXOR, SDLoc(N), MVT::v4f32,
                                 DAG.getBitcast(MVT::v4f32, N->getOperand(0)),
@@ -46990,6 +46982,20 @@ static SDValue combineXor(SDNode *N, SelectionDAG &DAG,
 
   if (SDValue RV = foldXorTruncShiftIntoCmp(N, DAG))
     return RV;
+
+  // Fold xor(truncate(xor(x,c1)),c2) -> xor(truncate(x),xor(truncate(c1),c2))
+  // TODO: Under what circumstances could this be performed in DAGCombine?
+  if (N->getOperand(0).getOpcode() == ISD::TRUNCATE &&
+      N->getOperand(0).getOperand(0).getOpcode() == N->getOpcode() &&
+      isa<ConstantSDNode>(N->getOperand(1)) &&
+      isa<ConstantSDNode>(N->getOperand(0).getOperand(0).getOperand(1))) {
+    SDLoc DL(N);
+    SDValue TruncateSrc = N->getOperand(0).getOperand(0);
+    SDValue LHS = DAG.getNode(ISD::TRUNCATE, DL, VT, TruncateSrc.getOperand(0));
+    SDValue RHS = DAG.getNode(ISD::TRUNCATE, DL, VT, TruncateSrc.getOperand(1));
+    return DAG.getNode(ISD::XOR, DL, VT, LHS,
+                       DAG.getNode(ISD::XOR, DL, VT, RHS, N->getOperand(1)));
+  }
 
   if (SDValue FPLogic = convertIntLogicToFPLogic(N, DAG, Subtarget))
     return FPLogic;

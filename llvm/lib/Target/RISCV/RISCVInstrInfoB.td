@@ -893,3 +893,27 @@ def : Pat<(i64 (or (and (assertsexti32 GPR:$rs2), 0xFFFFFFFFFFFF0000),
                    (srl (and GPR:$rs1, 0xFFFFFFFF), (i64 16)))),
           (PACKUW GPR:$rs1, GPR:$rs2)>;
 } // Predicates = [HasStdExtZbp, IsRV64]
+
+let Predicates = [HasStdExtZbb] in {
+def : PatGpr<int_riscv_orc_b, ORCB>;
+} // Predicates = [HasStdExtZbb]
+
+let Predicates = [HasStdExtZbc] in {
+def : PatGprGpr<int_riscv_clmul, CLMUL>;
+def : PatGprGpr<int_riscv_clmulh, CLMULH>;
+def : PatGprGpr<int_riscv_clmulr, CLMULR>;
+} // Predicates = [HasStdExtZbc]
+
+let Predicates = [HasStdExtZbr] in {
+def : PatGpr<int_riscv_crc32_b, CRC32B>;
+def : PatGpr<int_riscv_crc32_h, CRC32H>;
+def : PatGpr<int_riscv_crc32_w, CRC32W>;
+def : PatGpr<int_riscv_crc32c_b, CRC32CB>;
+def : PatGpr<int_riscv_crc32c_h, CRC32CH>;
+def : PatGpr<int_riscv_crc32c_w, CRC32CW>;
+} // Predicates = [HasStdExtZbr]
+
+let Predicates = [HasStdExtZbr, IsRV64] in {
+def : PatGpr<int_riscv_crc32_d, CRC32D>;
+def : PatGpr<int_riscv_crc32c_d, CRC32CD>;
+} // Predicates = [HasStdExtZbr, IsRV64]
