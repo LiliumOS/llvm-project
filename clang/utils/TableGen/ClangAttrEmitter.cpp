@@ -3644,10 +3644,12 @@ static void GenerateMutualExclusionsChecks(const Record &Attr,
   if (Attr.isSubClassOf("TypeAttr"))
     return;
 
-  // This means the attribute is either a statement attribute or a decl
-  // attribute, find out which.
+  // This means the attribute is either a statement attribute, a decl
+  // attribute, or both; find out which.
   bool CurAttrIsStmtAttr =
       Attr.isSubClassOf("StmtAttr") || Attr.isSubClassOf("DeclOrStmtAttr");
+  bool CurAttrIsDeclAttr =
+      !CurAttrIsStmtAttr || Attr.isSubClassOf("DeclOrStmtAttr");
 
   std::vector<std::string> DeclAttrs, StmtAttrs;
 
@@ -3666,11 +3668,16 @@ static void GenerateMutualExclusionsChecks(const Record &Attr,
 
         if (CurAttrIsStmtAttr)
           StmtAttrs.push_back((AttrToExclude->getName() + "Attr").str());
-        else
+        if (CurAttrIsDeclAttr)
           DeclAttrs.push_back((AttrToExclude->getName() + "Attr").str());
       }
     }
   }
+
+  // If there are any decl or stmt attributes, silence -Woverloaded-virtual
+  // warnings for them both.
+  if (!DeclAttrs.empty() || !StmtAttrs.empty())
+    OS << "  using ParsedAttrInfo::diagMutualExclusion;\n\n";
 
   // If we discovered any decl or stmt attributes to test for, generate the
   // predicates for them now.
