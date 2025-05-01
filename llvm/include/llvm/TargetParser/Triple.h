@@ -239,7 +239,8 @@ public:
     LiteOS,
     Serenity,
     Vulkan, // Vulkan SPIR-V
-    LastOSType = Vulkan
+    Lilium, // LiliumOS
+    LastOSType = Lilium
   };
   enum EnvironmentType {
     UnknownEnvironment,
@@ -302,7 +303,11 @@ public:
 
     PAuthTest,
 
-    LastEnvironmentType = PAuthTest
+    Standard,
+    Init, 
+    Kernel,
+
+    LastEnvironmentType = Kernel
   };
   enum ObjectFormatType {
     UnknownObjectFormat,

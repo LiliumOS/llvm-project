@@ -319,6 +319,7 @@ StringRef Triple::getOSTypeName(OSType Kind) {
   case LiteOS: return "liteos";
   case XROS: return "xros";
   case Vulkan: return "vulkan";
+  case Lilium: return "lilium";
   }
 
   llvm_unreachable("Invalid OSType");
@@ -384,6 +385,12 @@ StringRef Triple::getEnvironmentTypeName(EnvironmentType Kind) {
     return "pauthtest";
   case LLVM:
     return "llvm";
+  case Standard:
+    return "std";
+  case Init:
+    return "init";
+  case Kernel:
+    return "kernel";
   }
 
   llvm_unreachable("Invalid EnvironmentType!");
@@ -711,6 +718,7 @@ static Triple::OSType parseOS(StringRef OSName) {
     .StartsWith("liteos", Triple::LiteOS)
     .StartsWith("serenity", Triple::Serenity)
     .StartsWith("vulkan", Triple::Vulkan)
+    .StartsWith("lilium", Triple::Lilium)
     .Default(Triple::UnknownOS);
 }
 
@@ -766,6 +774,9 @@ static Triple::EnvironmentType parseEnvironment(StringRef EnvironmentName) {
       .StartsWith("ohos", Triple::OpenHOS)
       .StartsWith("pauthtest", Triple::PAuthTest)
       .StartsWith("llvm", Triple::LLVM)
+      .StartsWith("std", Triple::Standard)
+      .StartsWith("kernel", Triple::Kernel)
+      .StartsWith("init", Triple::Init)
       .Default(Triple::UnknownEnvironment);
 }
 
