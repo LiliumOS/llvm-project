@@ -1061,6 +1061,17 @@ public:
     LongDoubleFormat = &llvm::APFloat::IEEEquad();
   }
 };
+
+class LLVM_LIBRARY_VISIBILITY LiliumX86_64TargetInfo : public X86_64TargetInfo {
+public:
+  LiliumX86_64TargetInfo (const llvm::Triple &Triple, const TargetOptions &Opts) 
+    : X86_64TargetInfo(Triple, Opts) {
+      LongDoubleWidth = 64;
+      LongDoubleAlign = 64;
+      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+  }
+};
+
 } // namespace targets
 } // namespace clang
 #endif // LLVM_CLANG_LIB_BASIC_TARGETS_X86_H

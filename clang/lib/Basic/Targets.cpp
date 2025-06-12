@@ -654,6 +654,8 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
       return std::make_unique<PS5OSTargetInfo<X86_64TargetInfo>>(Triple, Opts);
     case llvm::Triple::Hurd:
       return std::make_unique<HurdTargetInfo<X86_64TargetInfo>>(Triple, Opts);
+    case llvm::Triple::Lilium:
+      return std::make_unique<LiliumX86_64TargetInfo>(Triple, Opts);
     default:
       return std::make_unique<X86_64TargetInfo>(Triple, Opts);
     }
