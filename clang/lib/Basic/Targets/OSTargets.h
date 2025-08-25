@@ -332,6 +332,7 @@ protected:
     if (this->HasFloat128)
       Builder.defineMacro("__FLOAT128__");
   }
+
 public:
   HurdTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : OSTargetInfo<Target>(Triple, Opts) {
@@ -346,6 +347,22 @@ public:
   }
 };
 
+template <typename Target>
+class LLVM_LIBRARY_VISIBILITY LiliumTargetInfo : public OSTargetInfo<Target> {
+protected:
+  void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
+                    MacroBuilder &Builder) const override {
+    Builder.defineMacro("__LILIUM__", "1");
+    if (this->HasFloat128)
+      Builder.defineMacro("__FLOAT128__");
+  }
+
+public:
+  LiliumTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : OSTargetInfo<Target>(Triple, Opts) {
+    this->WIntType = TargetInfo::UnsignedInt;
+  }
+};
 // Linux target
 template <typename Target>
 class LLVM_LIBRARY_VISIBILITY LinuxTargetInfo : public OSTargetInfo<Target> {
@@ -367,7 +384,7 @@ protected:
         Builder.defineMacro("__ANDROID_API__", "__ANDROID_MIN_SDK_VERSION__");
       }
     } else {
-        Builder.defineMacro("__gnu_linux__");
+      Builder.defineMacro("__gnu_linux__");
     }
     if (Opts.POSIXThreads)
       Builder.defineMacro("_REENTRANT");
@@ -707,8 +724,7 @@ public:
 };
 
 // AIX Target
-template <typename Target>
-class AIXTargetInfo : public OSTargetInfo<Target> {
+template <typename Target> class AIXTargetInfo : public OSTargetInfo<Target> {
 protected:
   void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
                     MacroBuilder &Builder) const override {

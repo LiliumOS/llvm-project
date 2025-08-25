@@ -151,7 +151,7 @@ class LLVM_LIBRARY_VISIBILITY X86TargetInfo : public TargetInfo {
   bool HasRAOINT = false;
   bool HasAVXVNNIINT8 = false;
   bool HasAVXNECONVERT = false;
-  bool HasKL = false;      // For key locker
+  bool HasKL = false;     // For key locker
   bool HasWIDEKL = false; // For wide key locker
   bool HasHRESET = false;
   bool HasAVXVNNI = false;
@@ -336,9 +336,7 @@ public:
     return "";
   }
 
-  bool useFP16ConversionIntrinsics() const override {
-    return false;
-  }
+  bool useFP16ConversionIntrinsics() const override { return false; }
 
   void getTargetDefines(const LangOptions &Opts,
                         MacroBuilder &Builder) const override;
@@ -368,9 +366,7 @@ public:
     return "";
   }
 
-  bool supportsTargetAttributeTune() const override {
-    return true;
-  }
+  bool supportsTargetAttributeTune() const override { return true; }
 
   bool isValidCPUName(StringRef Name) const override {
     bool Only64Bit = getTriple().getArch() != llvm::Triple::x86;
@@ -429,9 +425,7 @@ public:
 
   bool checkArithmeticFenceSupported() const override { return true; }
 
-  CallingConv getDefaultCallingConv() const override {
-    return CC_C;
-  }
+  CallingConv getDefaultCallingConv() const override { return CC_C; }
 
   bool hasSjLjLowering() const override { return true; }
 
@@ -582,8 +576,9 @@ public:
                                                                   Diags))
       return false;
     // We now know the features we have: we can decide how to align vectors.
-    MaxVectorAlign =
-        hasFeature("avx512f") ? 512 : hasFeature("avx") ? 256 : 128;
+    MaxVectorAlign = hasFeature("avx512f") ? 512
+                     : hasFeature("avx")   ? 256
+                                           : 128;
     return true;
   }
 };
@@ -797,9 +792,7 @@ public:
     }
   }
 
-  CallingConv getDefaultCallingConv() const override {
-    return CC_C;
-  }
+  CallingConv getDefaultCallingConv() const override { return CC_C; }
 
   // for x32 we need it here explicitly
   bool hasInt128Type() const override { return true; }
@@ -1065,8 +1058,9 @@ public:
                                                                   Diags))
       return false;
     // We now know the features we have: we can decide how to align vectors.
-    MaxVectorAlign =
-        hasFeature("avx512f") ? 512 : hasFeature("avx") ? 256 : 128;
+    MaxVectorAlign = hasFeature("avx512f") ? 512
+                     : hasFeature("avx")   ? 256
+                                           : 128;
     return true;
   }
 };
@@ -1125,13 +1119,17 @@ public:
   }
 };
 
-class LLVM_LIBRARY_VISIBILITY LiliumX86_64TargetInfo : public X86_64TargetInfo {
+class LLVM_LIBRARY_VISIBILITY LiliumX86_64TargetInfo
+    : public LiliumTargetInfo<X86_64TargetInfo> {
 public:
-  LiliumX86_64TargetInfo (const llvm::Triple &Triple, const TargetOptions &Opts) 
-    : X86_64TargetInfo(Triple, Opts) {
-      LongDoubleWidth = 64;
-      LongDoubleAlign = 64;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+  LiliumX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : LiliumTargetInfo(Triple, Opts) {
+    LongDoubleWidth = 64;
+    LongDoubleAlign = 64;
+    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    Float128Format = &llvm::APFloat::IEEEquad();
+    Float128Align = 128;
+    HasFloat128 = true;
   }
 };
 
