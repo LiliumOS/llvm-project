@@ -256,7 +256,7 @@ public:
     ChipStar,
     Firmware,
     QURT,
-    LastOSType = QURT Lilium, // LiliumOS
+    Lilium, // LiliumOS
     LastOSType = Lilium
   };
   enum EnvironmentType {
