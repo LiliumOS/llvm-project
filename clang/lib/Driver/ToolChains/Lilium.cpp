@@ -17,8 +17,8 @@
 #include "clang/Driver/CommonArgs.h"
 #include "clang/Driver/Distro.h"
 #include "clang/Driver/Driver.h"
-#include "clang/Driver/Options.h"
 #include "clang/Driver/SanitizerArgs.h"
+#include "clang/Options/Options.h"
 #include "llvm/Option/ArgList.h"
 #include "llvm/ProfileData/InstrProf.h"
 #include "llvm/Support/Path.h"
@@ -162,7 +162,7 @@ void Lilium::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
   const Driver &D = getDriver();
   std::string SysRoot = computeSysRoot();
 
-  if (DriverArgs.hasArg(clang::driver::options::OPT_nostdinc))
+  if (DriverArgs.hasArg(clang::options::OPT_nostdinc))
     return;
 
   // Add 'include' in the resource directory, which is similar to
@@ -259,19 +259,6 @@ void Lilium::AddCudaIncludeArgs(const ArgList &DriverArgs,
 void Lilium::AddHIPIncludeArgs(const ArgList &DriverArgs,
                                ArgStringList &CC1Args) const {
   RocmInstallation->AddHIPIncludeArgs(DriverArgs, CC1Args);
-}
-
-void Lilium::AddHIPRuntimeLibArgs(const ArgList &Args,
-                                  ArgStringList &CmdArgs) const {
-  CmdArgs.push_back(
-      Args.MakeArgString(StringRef("-L") + RocmInstallation->getLibPath()));
-
-  if (Args.hasFlag(options::OPT_frtlib_add_rpath,
-                   options::OPT_fno_rtlib_add_rpath, false))
-    CmdArgs.append(
-        {"-rpath", Args.MakeArgString(RocmInstallation->getLibPath())});
-
-  CmdArgs.push_back("-lamdhip64");
 }
 
 void Lilium::AddIAMCUIncludeArgs(const ArgList &DriverArgs,
